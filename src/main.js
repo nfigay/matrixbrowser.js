@@ -58,3 +58,13 @@ document.querySelector('#expand-rows').addEventListener('click', () => {
   matrix.rows.expandAll();
   renderer.render();
 });
+
+document.querySelector('#collapse-columns').addEventListener('click', () => {
+  matrix.columns.collapseAll();
+  renderer.render();
+});
+
+document.querySelector('#expand-columns').addEventListener('click', () => {
+  matrix.columns.expandAll();
+  renderer.render();
+});
