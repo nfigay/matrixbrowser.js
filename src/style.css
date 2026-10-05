@@ -50,3 +50,14 @@ body {
   font-size: 14px;
   pointer-events: none;
 }
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.controls button {
+  padding: 6px 10px;
+  cursor: pointer;
+}

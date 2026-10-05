@@ -48,3 +48,13 @@ const renderer = new SvgMatrixRenderer({
 });
 
 renderer.render();
+
+document.querySelector('#collapse-rows').addEventListener('click', () => {
+  matrix.rows.collapseAll();
+  renderer.render();
+});
+
+document.querySelector('#expand-rows').addEventListener('click', () => {
+  matrix.rows.expandAll();
+  renderer.render();
+});
