@@ -24,6 +24,24 @@ export class AxisProjection {
     return this.collapsed.has(entryId);
   }
 
+  collapseAll() {
+    const visit = (item, entryId) => {
+      const children = item.children ?? [];
+
+      if (children.length > 0) {
+        this.collapsed.add(entryId);
+      }
+
+      children.forEach((child, index) => {
+        visit(child, entryId + '/' + index);
+      });
+    };
+
+    this.hierarchy.forEach((root, index) => {
+      visit(root, String(index));
+    });
+  }
+
   getVisibleEntries() {
     const visible = [];
 

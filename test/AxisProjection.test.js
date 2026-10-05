@@ -55,6 +55,41 @@ describe('AxisProjection', () => {
     expect(axis.getVisibleEntries()).toHaveLength(5);
   });
 
+  it('collapses all expandable occurrences', () => {
+    const nestedHierarchy = [
+      {
+        id: 'root',
+        children: [
+          {
+            id: 'group',
+            children: [
+              { id: 'leaf' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const axis = new AxisProjection({
+      hierarchy: nestedHierarchy
+    });
+
+    axis.collapseAll();
+
+    expect(axis.getVisibleEntries().map(entry => entry.id)).toEqual([
+      'root'
+    ]);
+
+    axis.expand('0');
+
+    expect(axis.getVisibleEntries().map(entry => entry.id)).toEqual([
+      'root',
+      'group'
+    ]);
+
+    expect(axis.isCollapsed('0/0')).toBe(true);
+  });
+
   it('preserves opaque scope identity in projected entries', () => {
     const scope = {
       query: () => 'application-defined'
