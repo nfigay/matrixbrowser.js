@@ -54,7 +54,7 @@ export class SvgMatrixRenderer {
 
       if (!column.leaf) {
         text.addEventListener("click", () => {
-          this.matrix.columns.toggle(column.id);
+          this.matrix.columns.toggle(column.entryId);
           this.render();
         });
       }
@@ -76,7 +76,7 @@ export class SvgMatrixRenderer {
 
       if (!row.leaf) {
         rowLabel.addEventListener("click", () => {
-          this.matrix.rows.toggle(row.id);
+          this.matrix.rows.toggle(row.entryId);
           this.render();
         });
       }

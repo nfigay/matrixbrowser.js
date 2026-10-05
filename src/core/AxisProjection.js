@@ -4,34 +4,41 @@ export class AxisProjection {
     this.collapsed = new Set();
   }
 
-  collapse(id) {
-    this.collapsed.add(id);
+  collapse(entryId) {
+    this.collapsed.add(entryId);
   }
 
-  expand(id) {
-    this.collapsed.delete(id);
+  expand(entryId) {
+    this.collapsed.delete(entryId);
   }
 
-  toggle(id) {
-    if (this.collapsed.has(id)) {
-      this.expand(id);
+  toggle(entryId) {
+    if (this.collapsed.has(entryId)) {
+      this.expand(entryId);
     } else {
-      this.collapse(id);
+      this.collapse(entryId);
     }
   }
 
-  isCollapsed(id) {
-    return this.collapsed.has(id);
+  isCollapsed(entryId) {
+    return this.collapsed.has(entryId);
   }
 
   getVisibleEntries() {
     const visible = [];
 
-    const visit = (item, depth = 0, parent = null) => {
+    const visit = (
+      item,
+      entryId,
+      depth = 0,
+      parent = null
+    ) => {
       const children = item.children ?? [];
-      const collapsed = this.isCollapsed(item.id);
+
+      const collapsed = this.isCollapsed(entryId);
 
       const entry = {
+        entryId,
         id: item.id,
         item,
         label: item.label ?? item.id,
@@ -45,15 +52,20 @@ export class AxisProjection {
       visible.push(entry);
 
       if (!collapsed) {
-        for (const child of children) {
-          visit(child, depth + 1, entry);
-        }
+        children.forEach((child, index) => {
+          visit(
+            child,
+            entryId + '/' + index,
+            depth + 1,
+            entry
+          );
+        });
       }
     };
 
-    for (const root of this.hierarchy) {
-      visit(root);
-    }
+    this.hierarchy.forEach((root, index) => {
+      visit(root, String(index));
+    });
 
     return visible;
   }

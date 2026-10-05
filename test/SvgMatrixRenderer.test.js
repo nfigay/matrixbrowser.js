@@ -124,4 +124,94 @@ describe('SvgMatrixRenderer interactions', () => {
 
     expect(labels().some(x => x.includes('CRM'))).toBe(true);
   });
+
+  it('collapses one nested occurrence without collapsing another', () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    const sharedRows = [
+      {
+        id: 'left',
+        label: 'Left',
+        scope: {},
+        children: [
+          {
+            id: 'shared',
+            label: 'Shared',
+            scope: {},
+            children: [
+              {
+                id: 'left-child',
+                label: 'Left child',
+                scope: {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'right',
+        label: 'Right',
+        scope: {},
+        children: [
+          {
+            id: 'shared',
+            label: 'Shared',
+            scope: {},
+            children: [
+              {
+                id: 'right-child',
+                label: 'Right child',
+                scope: {}
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: { hierarchy: sharedRows },
+      columns: {
+        hierarchy: [
+          {
+            id: 'column',
+            label: 'Column',
+            scope: {}
+          }
+        ]
+      },
+      resolveCell: () => ''
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix')
+    });
+
+    renderer.render();
+
+    const sharedBranches =
+      [...document.querySelectorAll('.axis-label.branch')]
+        .filter(element =>
+          element.textContent.includes('Shared')
+        );
+
+    expect(sharedBranches).toHaveLength(2);
+
+    sharedBranches[0].dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
+
+    const after = labels();
+
+    expect(
+      after.some(label => label.includes('Left child'))
+    ).toBe(false);
+
+    expect(
+      after.some(label => label.includes('Right child'))
+    ).toBe(true);
+  });
+
 });

@@ -43,7 +43,11 @@ describe('MatrixBrowser', () => {
       resolveCell: () => null
     });
 
-    matrix.rows.collapse('group');
+    const rowGroup = matrix
+      .getVisibleRows()
+      .find(entry => entry.id === 'group');
+
+    matrix.rows.collapse(rowGroup.entryId);
 
     expect(matrix.getVisibleRows()).toHaveLength(1);
     expect(matrix.getVisibleColumns()).toHaveLength(2);
