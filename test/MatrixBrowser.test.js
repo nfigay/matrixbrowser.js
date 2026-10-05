@@ -52,4 +52,37 @@ describe('MatrixBrowser', () => {
     expect(matrix.getVisibleRows()).toHaveLength(1);
     expect(matrix.getVisibleColumns()).toHaveLength(2);
   });
+
+  it('preserves an asynchronous resolver value without forcing getCell to be async', async () => {
+    const expected = {
+      count: 7,
+      label: 'async value'
+    };
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'r', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'c', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => Promise.resolve(expected)
+    });
+
+    const row = matrix.getVisibleRows()[0];
+    const column = matrix.getVisibleColumns()[0];
+
+    const cell = matrix.getCell(row, column);
+
+    expect(cell.row).toBe(row);
+    expect(cell.column).toBe(column);
+    expect(cell.value).toBeInstanceOf(Promise);
+    expect(await cell.value).toBe(expected);
+  });
+
 });

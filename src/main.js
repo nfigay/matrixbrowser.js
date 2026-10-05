@@ -13,12 +13,14 @@ import {
 import { resolveCell } from '../examples/basic/resolver.js';
 import { resolveObjectCell } from '../examples/objects/resolver.js';
 import { renderObjectCell } from '../examples/objects/renderCell.js';
+import { resolveAsyncCell } from '../examples/async/resolver.js';
 import './style.css';
 
 const params = new URLSearchParams(window.location.search);
 
 const occurrenceDemo = params.has('occurrences');
 const objectDemo = params.has('objects');
+const asyncDemo = params.has('async');
 
 const rowHierarchy = occurrenceDemo
   ? occurrenceRows
@@ -32,7 +34,11 @@ const matrix = new MatrixBrowser({
   model,
   rows: { hierarchy: rowHierarchy },
   columns: { hierarchy: columnHierarchy },
-  resolveCell: objectDemo ? resolveObjectCell : resolveCell
+  resolveCell: asyncDemo
+    ? resolveAsyncCell
+    : objectDemo
+      ? resolveObjectCell
+      : resolveCell
 });
 
 const renderer = new SvgMatrixRenderer({

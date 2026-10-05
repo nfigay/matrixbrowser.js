@@ -98,22 +98,26 @@ export class SvgMatrixRenderer {
 
         svg.append(rect);
 
-        if (this.renderCell) {
-          const content = this.renderCell({
-            cell,
-            x,
-            y,
-            width: columnWidth,
-            height: rowHeight,
-            createElement: svgElement
-          });
+        const appendCellContent = resolvedCell => {
+          if (this.renderCell) {
+            const content = this.renderCell({
+              cell: resolvedCell,
+              x,
+              y,
+              width: columnWidth,
+              height: rowHeight,
+              createElement: svgElement
+            });
 
-          if (Array.isArray(content)) {
-            svg.append(...content);
-          } else if (content) {
-            svg.append(content);
+            if (Array.isArray(content)) {
+              svg.append(...content);
+            } else if (content) {
+              svg.append(content);
+            }
+
+            return;
           }
-        } else {
+
           const value = svgElement("text", {
             x: x + columnWidth / 2,
             y: y + 25,
@@ -121,9 +125,61 @@ export class SvgMatrixRenderer {
             class: "cell-value"
           });
 
-          value.textContent = String(cell.value);
+          value.textContent = String(resolvedCell.value);
 
           svg.append(value);
+        };
+
+        if (
+          cell.value &&
+          typeof cell.value.then === "function"
+        ) {
+          const pending = svgElement("text", {
+            x: x + columnWidth / 2,
+            y: y + 25,
+            "text-anchor": "middle",
+            class: "cell-pending"
+          });
+
+          pending.textContent = "…";
+          svg.append(pending);
+
+          Promise.resolve(cell.value).then(
+            resolvedValue => {
+              if (!pending.isConnected) {
+                return;
+              }
+
+              pending.remove();
+
+              appendCellContent({
+                ...cell,
+                value: resolvedValue
+              });
+            },
+            error => {
+              if (!pending.isConnected) {
+                return;
+              }
+
+              const errorElement = svgElement("text", {
+                x: x + columnWidth / 2,
+                y: y + 25,
+                "text-anchor": "middle",
+                class: "cell-error",
+                "data-error":
+                  error instanceof Error
+                    ? error.message
+                    : String(error)
+              });
+
+              errorElement.textContent = "!";
+
+              pending.replaceWith(errorElement);
+            }
+          );
+        } else {
+          appendCellContent(cell);
         }
       });
     });

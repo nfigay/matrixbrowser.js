@@ -294,4 +294,280 @@ describe('SvgMatrixRenderer interactions', () => {
     ).toBeNull();
   });
 
+
+  it('renders pending state and then an asynchronously resolved cell value', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let resolveValue;
+
+    const pendingValue = new Promise(resolve => {
+      resolveValue = resolve;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => pendingValue
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix')
+    });
+
+    renderer.render();
+
+    const pending =
+      document.querySelector('.cell-pending');
+
+    expect(pending).not.toBeNull();
+
+    resolveValue('resolved value');
+
+    await pendingValue;
+    await Promise.resolve();
+
+    const value =
+      document.querySelector('.cell-value');
+
+    expect(value).not.toBeNull();
+    expect(value.textContent).toBe('resolved value');
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).toBeNull();
+  });
+
+
+  it('ignores an asynchronous result from a stale render', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let resolveA;
+    let resolveB;
+    let call = 0;
+
+    const promiseA = new Promise(resolve => {
+      resolveA = resolve;
+    });
+
+    const promiseB = new Promise(resolve => {
+      resolveB = resolve;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => {
+        call += 1;
+        return call === 1 ? promiseA : promiseB;
+      }
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix')
+    });
+
+    // Render #1 owns Promise A.
+    renderer.render();
+
+    const firstPending =
+      document.querySelector('.cell-pending');
+
+    expect(firstPending).not.toBeNull();
+
+    // Render #2 replaces the complete SVG and owns Promise B.
+    renderer.render();
+
+    const secondPending =
+      document.querySelector('.cell-pending');
+
+    expect(secondPending).not.toBeNull();
+    expect(secondPending).not.toBe(firstPending);
+    expect(firstPending.isConnected).toBe(false);
+
+    // New render resolves first.
+    resolveB('new value');
+    await promiseB;
+    await Promise.resolve();
+
+    expect(
+      document.querySelector('.cell-value')?.textContent
+    ).toBe('new value');
+
+    // Old render resolves afterwards and must be ignored.
+    resolveA('stale value');
+    await promiseA;
+    await Promise.resolve();
+
+    expect(
+      document.querySelector('.cell-value')?.textContent
+    ).toBe('new value');
+
+    expect(
+      document.body.textContent.includes('stale value')
+    ).toBe(false);
+  });
+
+
+  it('renders an error state when asynchronous cell resolution fails', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let rejectValue;
+
+    const pendingValue = new Promise((resolve, reject) => {
+      rejectValue = reject;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => pendingValue
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix')
+    });
+
+    renderer.render();
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).not.toBeNull();
+
+    rejectValue(new Error('resolution failed'));
+
+    try {
+      await pendingValue;
+    } catch {
+      // Expected rejection.
+    }
+
+    await Promise.resolve();
+
+    const error =
+      document.querySelector('.cell-error');
+
+    expect(error).not.toBeNull();
+    expect(error.textContent).toBe('!');
+    expect(error.getAttribute('data-error'))
+      .toBe('resolution failed');
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).toBeNull();
+  });
+
+
+  it('ignores an asynchronous error from a stale render', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let rejectA;
+    let resolveB;
+    let call = 0;
+
+    const promiseA = new Promise((resolve, reject) => {
+      rejectA = reject;
+    });
+
+    const promiseB = new Promise(resolve => {
+      resolveB = resolve;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => {
+        call += 1;
+        return call === 1 ? promiseA : promiseB;
+      }
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix')
+    });
+
+    // Render #1 owns Promise A.
+    renderer.render();
+
+    const firstPending =
+      document.querySelector('.cell-pending');
+
+    expect(firstPending).not.toBeNull();
+
+    // Render #2 replaces it and owns Promise B.
+    renderer.render();
+
+    expect(firstPending.isConnected).toBe(false);
+
+    resolveB('current value');
+    await promiseB;
+    await Promise.resolve();
+
+    expect(
+      document.querySelector('.cell-value')?.textContent
+    ).toBe('current value');
+
+    // The stale rejection must be consumed but ignored visually.
+    rejectA(new Error('stale failure'));
+
+    try {
+      await promiseA;
+    } catch {
+      // Expected rejection.
+    }
+
+    await Promise.resolve();
+
+    expect(
+      document.querySelector('.cell-value')?.textContent
+    ).toBe('current value');
+
+    expect(
+      document.querySelector('.cell-error')
+    ).toBeNull();
+
+    expect(
+      document.body.textContent.includes('stale failure')
+    ).toBe(false);
+  });
+
 });
