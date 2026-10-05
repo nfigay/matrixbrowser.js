@@ -11,10 +11,14 @@ import {
   columnHierarchy as occurrenceColumns
 } from '../examples/occurrences/hierarchies.js';
 import { resolveCell } from '../examples/basic/resolver.js';
+import { resolveObjectCell } from '../examples/objects/resolver.js';
+import { renderObjectCell } from '../examples/objects/renderCell.js';
 import './style.css';
 
-const occurrenceDemo =
-  new URLSearchParams(window.location.search).has('occurrences');
+const params = new URLSearchParams(window.location.search);
+
+const occurrenceDemo = params.has('occurrences');
+const objectDemo = params.has('objects');
 
 const rowHierarchy = occurrenceDemo
   ? occurrenceRows
@@ -28,12 +32,13 @@ const matrix = new MatrixBrowser({
   model,
   rows: { hierarchy: rowHierarchy },
   columns: { hierarchy: columnHierarchy },
-  resolveCell
+  resolveCell: objectDemo ? resolveObjectCell : resolveCell
 });
 
 const renderer = new SvgMatrixRenderer({
   matrix,
-  element: document.querySelector('#matrix-browser')
+  element: document.querySelector('#matrix-browser'),
+  renderCell: objectDemo ? renderObjectCell : null
 });
 
 renderer.render();

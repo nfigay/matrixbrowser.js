@@ -214,4 +214,84 @@ describe('SvgMatrixRenderer interactions', () => {
     ).toBe(true);
   });
 
+
+  it('renders arbitrary cell values through an injected cell renderer', () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    const objectValue = {
+      count: 3,
+      status: 'warning',
+      label: '3 relations'
+    };
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          {
+            id: 'row',
+            label: 'Row',
+            scope: {}
+          }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          {
+            id: 'column',
+            label: 'Column',
+            scope: {}
+          }
+        ]
+      },
+      resolveCell: () => objectValue
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix'),
+      renderCell: ({ cell, x, y, width, height, createElement }) => {
+        expect(cell.value).toBe(objectValue);
+        expect(width).toBeGreaterThan(0);
+        expect(height).toBeGreaterThan(0);
+
+        const marker = createElement('circle', {
+          cx: x + 14,
+          cy: y + height / 2,
+          r: 4,
+          class: 'custom-cell-marker',
+          'data-status': cell.value.status
+        });
+
+        const text = createElement('text', {
+          x: x + 24,
+          y: y + height / 2,
+          class: 'custom-cell-value'
+        });
+
+        text.textContent = cell.value.label;
+
+        return [marker, text];
+      }
+    });
+
+    renderer.render();
+
+    const rendered =
+      document.querySelector('.custom-cell-value');
+
+    expect(rendered).not.toBeNull();
+    expect(rendered.textContent).toBe('3 relations');
+
+    const marker =
+      document.querySelector('.custom-cell-marker');
+
+    expect(marker).not.toBeNull();
+    expect(marker.getAttribute('data-status')).toBe('warning');
+
+    expect(
+      document.querySelector('.cell-value')
+    ).toBeNull();
+  });
+
 });

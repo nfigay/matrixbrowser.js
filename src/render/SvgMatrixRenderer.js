@@ -11,9 +11,10 @@ const svgElement = (name, attributes = {}) => {
 };
 
 export class SvgMatrixRenderer {
-  constructor({ matrix, element }) {
+  constructor({ matrix, element, renderCell = null }) {
     this.matrix = matrix;
     this.element = element;
+    this.renderCell = renderCell;
   }
 
   render() {
@@ -95,16 +96,35 @@ export class SvgMatrixRenderer {
           class: "cell"
         });
 
-        const value = svgElement("text", {
-          x: x + columnWidth / 2,
-          y: y + 25,
-          "text-anchor": "middle",
-          class: "cell-value"
-        });
+        svg.append(rect);
 
-        value.textContent = String(cell.value);
+        if (this.renderCell) {
+          const content = this.renderCell({
+            cell,
+            x,
+            y,
+            width: columnWidth,
+            height: rowHeight,
+            createElement: svgElement
+          });
 
-        svg.append(rect, value);
+          if (Array.isArray(content)) {
+            svg.append(...content);
+          } else if (content) {
+            svg.append(content);
+          }
+        } else {
+          const value = svgElement("text", {
+            x: x + columnWidth / 2,
+            y: y + 25,
+            "text-anchor": "middle",
+            class: "cell-value"
+          });
+
+          value.textContent = String(cell.value);
+
+          svg.append(value);
+        }
       });
     });
 
