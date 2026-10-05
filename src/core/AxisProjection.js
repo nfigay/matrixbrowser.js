@@ -42,6 +42,10 @@ export class AxisProjection {
     });
   }
 
+  expandAll() {
+    this.collapsed.clear();
+  }
+
   getVisibleEntries() {
     const visible = [];
 

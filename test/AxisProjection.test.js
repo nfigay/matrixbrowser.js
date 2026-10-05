@@ -90,6 +90,38 @@ describe('AxisProjection', () => {
     expect(axis.isCollapsed('0/0')).toBe(true);
   });
 
+  it('expands all collapsed occurrences', () => {
+    const nestedHierarchy = [
+      {
+        id: 'root',
+        children: [
+          {
+            id: 'group',
+            children: [
+              { id: 'leaf' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const axis = new AxisProjection({
+      hierarchy: nestedHierarchy
+    });
+
+    axis.collapseAll();
+    axis.expandAll();
+
+    expect(axis.getVisibleEntries().map(entry => entry.id)).toEqual([
+      'root',
+      'group',
+      'leaf'
+    ]);
+
+    expect(axis.isCollapsed('0')).toBe(false);
+    expect(axis.isCollapsed('0/0')).toBe(false);
+  });
+
   it('preserves opaque scope identity in projected entries', () => {
     const scope = {
       query: () => 'application-defined'
