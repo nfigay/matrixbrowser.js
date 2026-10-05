@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { MatrixBrowser } from '../src/core/MatrixBrowser.js';
+import { model } from '../examples/basic/model.js';
+import {
+  rowHierarchy,
+  columnHierarchy
+} from '../examples/basic/hierarchies.js';
+import { resolveCell } from '../examples/basic/resolver.js';
 
 describe('MatrixBrowser', () => {
   it('passes opaque row and column scopes to the resolver', () => {
@@ -96,6 +102,31 @@ describe('MatrixBrowser', () => {
       rowScope: row.scope,
       columnScope: column.scope
     });
+  });
+
+  it('resolves leaf and group scope combinations', () => {
+    const matrix = new MatrixBrowser({
+      model,
+      rows: { hierarchy: rowHierarchy },
+      columns: { hierarchy: columnHierarchy },
+      resolveCell
+    });
+
+    const rows = matrix.getVisibleRows();
+    const columns = matrix.getVisibleColumns();
+
+    const business = rows.find(entry => entry.id === 'business');
+    const order = rows.find(entry => entry.id === 'order');
+
+    const applications = columns.find(
+      entry => entry.id === 'applications'
+    );
+    const crm = columns.find(entry => entry.id === 'crm');
+
+    expect(matrix.getCell(order, crm).value).toBe(3);
+    expect(matrix.getCell(business, crm).value).toBe(5);
+    expect(matrix.getCell(order, applications).value).toBe(4);
+    expect(matrix.getCell(business, applications).value).toBe(10);
   });
 
   it('preserves an asynchronous resolver value without forcing getCell to be async', async () => {
