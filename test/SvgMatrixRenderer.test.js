@@ -570,4 +570,74 @@ describe('SvgMatrixRenderer interactions', () => {
     ).toBe(false);
   });
 
+  it('renders pending state through an injected pending cell renderer', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let resolveValue;
+
+    const pendingValue = new Promise(resolve => {
+      resolveValue = resolve;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => pendingValue
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix'),
+      renderPendingCell: ({ cell, x, y, width, height, createElement }) => {
+        expect(cell.value).toBe(pendingValue);
+        expect(width).toBeGreaterThan(0);
+        expect(height).toBeGreaterThan(0);
+
+        const pending = createElement('text', {
+          x: x + width / 2,
+          y: y + height / 2,
+          class: 'custom-cell-pending'
+        });
+
+        pending.textContent = 'loading';
+
+        return pending;
+      }
+    });
+
+    renderer.render();
+
+    const pending =
+      document.querySelector('.custom-cell-pending');
+
+    expect(pending).not.toBeNull();
+    expect(pending.textContent).toBe('loading');
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).toBeNull();
+
+    resolveValue('resolved value');
+
+    await pendingValue;
+    await Promise.resolve();
+
+    expect(
+      document.querySelector('.custom-cell-pending')
+    ).toBeNull();
+
+    expect(
+      document.querySelector('.cell-value')?.textContent
+    ).toBe('resolved value');
+  });
+
 });

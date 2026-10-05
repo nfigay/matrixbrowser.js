@@ -11,10 +11,16 @@ const svgElement = (name, attributes = {}) => {
 };
 
 export class SvgMatrixRenderer {
-  constructor({ matrix, element, renderCell = null }) {
+  constructor({
+    matrix,
+    element,
+    renderCell = null,
+    renderPendingCell = null
+  }) {
     this.matrix = matrix;
     this.element = element;
     this.renderCell = renderCell;
+    this.renderPendingCell = renderPendingCell;
   }
 
   render() {
@@ -134,14 +140,28 @@ export class SvgMatrixRenderer {
           cell.value &&
           typeof cell.value.then === "function"
         ) {
-          const pending = svgElement("text", {
-            x: x + columnWidth / 2,
-            y: y + 25,
-            "text-anchor": "middle",
-            class: "cell-pending"
-          });
+          let pending;
 
-          pending.textContent = "…";
+          if (this.renderPendingCell) {
+            pending = this.renderPendingCell({
+              cell,
+              x,
+              y,
+              width: columnWidth,
+              height: rowHeight,
+              createElement: svgElement
+            });
+          } else {
+            pending = svgElement("text", {
+              x: x + columnWidth / 2,
+              y: y + 25,
+              "text-anchor": "middle",
+              class: "cell-pending"
+            });
+
+            pending.textContent = "…";
+          }
+
           svg.append(pending);
 
           Promise.resolve(cell.value).then(
