@@ -1,0 +1,22 @@
+{
+  "name": "matrixbrowser-js",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "test": "vitest",
+    "dev": "vite",
+    "test:run": "vitest run",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.3.2",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  }
+}

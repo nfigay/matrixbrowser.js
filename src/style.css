@@ -1,0 +1,52 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202124;
+  background: #f7f8fa;
+}
+
+body {
+  margin: 0;
+  padding: 32px;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.panel {
+  overflow: auto;
+  background: white;
+  border: 1px solid #d9dde3;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.matrix {
+  display: block;
+  min-width: 620px;
+}
+
+.axis-label {
+  font-size: 14px;
+  user-select: none;
+}
+
+.axis-label.branch {
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.axis-label.branch:hover {
+  text-decoration: underline;
+}
+
+.cell {
+  fill: #f8fafc;
+  stroke: #d9dde3;
+}
+
+.cell-value {
+  font-size: 14px;
+  pointer-events: none;
+}
