@@ -53,6 +53,51 @@ describe('MatrixBrowser', () => {
     expect(matrix.getVisibleColumns()).toHaveLength(2);
   });
 
+  it('resolves cells from projected row and column occurrences', () => {
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          {
+            id: 'shared',
+            scope: { occurrence: 'row' }
+          }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          {
+            id: 'shared',
+            scope: { occurrence: 'column' }
+          }
+        ]
+      },
+      resolveCell({ row, column }) {
+        return {
+          rowEntryId: row.entryId,
+          columnEntryId: column.entryId,
+          rowScope: row.scope,
+          columnScope: column.scope
+        };
+      }
+    });
+
+    const row = matrix.getVisibleRows()[0];
+    const column = matrix.getVisibleColumns()[0];
+
+    const cell = matrix.getCell(row, column);
+
+    expect(cell.row).toBe(row);
+    expect(cell.column).toBe(column);
+
+    expect(cell.value).toEqual({
+      rowEntryId: row.entryId,
+      columnEntryId: column.entryId,
+      rowScope: row.scope,
+      columnScope: column.scope
+    });
+  });
+
   it('preserves an asynchronous resolver value without forcing getCell to be async', async () => {
     const expected = {
       count: 7,

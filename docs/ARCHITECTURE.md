@@ -656,11 +656,17 @@ matrix.columns.expand(columnEntry.entryId);
 Inspection :
 
 ``` js
-matrix.getCell(rowId, columnId);
+matrix.getCell(rowEntry, columnEntry);
 
 matrix.getVisibleRows();
 matrix.getVisibleColumns();
 ```
+
+`getCell(rowEntry, columnEntry)` reçoit les occurrences projetées
+(`AxisEntry`) retournées par les projections d'axes. Les arguments ne sont
+pas de simples identifiants sémantiques : plusieurs occurrences peuvent
+partager le même `id` tout en ayant des `entryId` et des contextes
+distincts.
 
 Rafraîchissement :
 
