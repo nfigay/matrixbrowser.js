@@ -15,12 +15,14 @@ export class SvgMatrixRenderer {
     matrix,
     element,
     renderCell = null,
-    renderPendingCell = null
+    renderPendingCell = null,
+    renderErrorCell = null
   }) {
     this.matrix = matrix;
     this.element = element;
     this.renderCell = renderCell;
     this.renderPendingCell = renderPendingCell;
+    this.renderErrorCell = renderErrorCell;
   }
 
   render() {
@@ -182,18 +184,32 @@ export class SvgMatrixRenderer {
                 return;
               }
 
-              const errorElement = svgElement("text", {
-                x: x + columnWidth / 2,
-                y: y + 25,
-                "text-anchor": "middle",
-                class: "cell-error",
-                "data-error":
-                  error instanceof Error
-                    ? error.message
-                    : String(error)
-              });
+              let errorElement;
 
-              errorElement.textContent = "!";
+              if (this.renderErrorCell) {
+                errorElement = this.renderErrorCell({
+                  cell,
+                  error,
+                  x,
+                  y,
+                  width: columnWidth,
+                  height: rowHeight,
+                  createElement: svgElement
+                });
+              } else {
+                errorElement = svgElement("text", {
+                  x: x + columnWidth / 2,
+                  y: y + 25,
+                  "text-anchor": "middle",
+                  class: "cell-error",
+                  "data-error":
+                    error instanceof Error
+                      ? error.message
+                      : String(error)
+                });
+
+                errorElement.textContent = "!";
+              }
 
               pending.replaceWith(errorElement);
             }

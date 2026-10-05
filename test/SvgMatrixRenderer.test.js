@@ -640,4 +640,90 @@ describe('SvgMatrixRenderer interactions', () => {
     ).toBe('resolved value');
   });
 
+  it('renders error state through an injected error cell renderer', async () => {
+    document.body.innerHTML = '<div id="matrix"></div>';
+
+    let rejectValue;
+
+    const failure = new Error('custom failure');
+
+    const pendingValue = new Promise((resolve, reject) => {
+      rejectValue = reject;
+    });
+
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', label: 'Row', scope: {} }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', label: 'Column', scope: {} }
+        ]
+      },
+      resolveCell: () => pendingValue
+    });
+
+    const renderer = new SvgMatrixRenderer({
+      matrix,
+      element: document.querySelector('#matrix'),
+      renderErrorCell: ({
+        cell,
+        error,
+        x,
+        y,
+        width,
+        height,
+        createElement
+      }) => {
+        expect(cell.value).toBe(pendingValue);
+        expect(error).toBe(failure);
+        expect(width).toBeGreaterThan(0);
+        expect(height).toBeGreaterThan(0);
+
+        const errorElement = createElement('text', {
+          x: x + width / 2,
+          y: y + height / 2,
+          class: 'custom-cell-error'
+        });
+
+        errorElement.textContent = error.message;
+
+        return errorElement;
+      }
+    });
+
+    renderer.render();
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).not.toBeNull();
+
+    rejectValue(failure);
+
+    try {
+      await pendingValue;
+    } catch {
+      // Expected rejection.
+    }
+
+    await Promise.resolve();
+
+    const error =
+      document.querySelector('.custom-cell-error');
+
+    expect(error).not.toBeNull();
+    expect(error.textContent).toBe('custom failure');
+
+    expect(
+      document.querySelector('.cell-pending')
+    ).toBeNull();
+
+    expect(
+      document.querySelector('.cell-error')
+    ).toBeNull();
+  });
+
 });
