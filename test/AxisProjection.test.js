@@ -28,6 +28,37 @@ describe('AxisProjection', () => {
     ]);
   });
 
+  it('projects a flat classification as root leaf occurrences', () => {
+    const axis = new AxisProjection({
+      hierarchy: [
+        { id: 'alpha', label: 'Alpha', scope: { key: 'a' } },
+        { id: 'beta', label: 'Beta', scope: { key: 'b' } },
+        { id: 'gamma', label: 'Gamma', scope: { key: 'c' } }
+      ]
+    });
+
+    const entries = axis.getVisibleEntries();
+
+    expect(entries.map(entry => entry.id)).toEqual([
+      'alpha',
+      'beta',
+      'gamma'
+    ]);
+
+    expect(entries.map(entry => entry.entryId)).toEqual([
+      '0',
+      '1',
+      '2'
+    ]);
+
+    for (const entry of entries) {
+      expect(entry.depth).toBe(0);
+      expect(entry.parent).toBeNull();
+      expect(entry.leaf).toBe(true);
+      expect(entry.expanded).toBe(false);
+    }
+  });
+
   it('hides descendants when an occurrence is collapsed', () => {
     const axis = new AxisProjection({ hierarchy });
 
