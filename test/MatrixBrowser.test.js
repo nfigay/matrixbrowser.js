@@ -59,6 +59,45 @@ describe('MatrixBrowser', () => {
     expect(matrix.getVisibleColumns()).toHaveLength(2);
   });
 
+  it('supports different row and column classifications', () => {
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row-a', scope: { layer: 'business' } },
+          { id: 'row-b', scope: { layer: 'technology' } }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column-a', scope: { owner: 'team-a' } },
+          { id: 'column-b', scope: { owner: 'team-b' } },
+          { id: 'column-c', scope: { owner: 'team-c' } }
+        ]
+      },
+      resolveCell({ row, column }) {
+        return `${row.scope.layer}:${column.scope.owner}`;
+      }
+    });
+
+    const rows = matrix.getVisibleRows();
+    const columns = matrix.getVisibleColumns();
+
+    expect(rows.map(entry => entry.id)).toEqual([
+      'row-a',
+      'row-b'
+    ]);
+
+    expect(columns.map(entry => entry.id)).toEqual([
+      'column-a',
+      'column-b',
+      'column-c'
+    ]);
+
+    expect(matrix.getCell(rows[1], columns[2]).value)
+      .toBe('technology:team-c');
+  });
+
   it('resolves cells from projected row and column occurrences', () => {
     const matrix = new MatrixBrowser({
       model: {},
