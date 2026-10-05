@@ -143,6 +143,32 @@ describe('MatrixBrowser', () => {
     });
   });
 
+  it('preserves boolean cell values', () => {
+    const matrix = new MatrixBrowser({
+      model: {},
+      rows: {
+        hierarchy: [
+          { id: 'row', scope: { active: true } }
+        ]
+      },
+      columns: {
+        hierarchy: [
+          { id: 'column', scope: { active: true } }
+        ]
+      },
+      resolveCell({ row, column }) {
+        return row.scope.active && column.scope.active;
+      }
+    });
+
+    const row = matrix.getVisibleRows()[0];
+    const column = matrix.getVisibleColumns()[0];
+    const cell = matrix.getCell(row, column);
+
+    expect(cell.value).toBe(true);
+    expect(typeof cell.value).toBe('boolean');
+  });
+
   it('resolves leaf and group scope combinations', () => {
     const matrix = new MatrixBrowser({
       model,
