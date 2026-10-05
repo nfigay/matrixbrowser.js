@@ -229,8 +229,8 @@ Chaque axe possède une projection indépendante de sa hiérarchie.
 Conceptuellement :
 
 ``` js
-const rows = new AxisProjection(rowHierarchy, model);
-const columns = new AxisProjection(columnHierarchy, model);
+const rows = new AxisProjection({ hierarchy: rowHierarchy });
+const columns = new AxisProjection({ hierarchy: columnHierarchy });
 ```
 
 Chaque projection possède son propre état de navigation.
@@ -238,8 +238,8 @@ Chaque projection possède son propre état de navigation.
 Exemple :
 
 ``` js
-rows.collapse("applications");
-columns.expand("applications");
+rows.collapse(rowEntry.entryId);
+columns.expand(columnEntry.entryId);
 ```
 
 Le même item peut donc être replié sur un axe et déplié sur l'autre.
@@ -257,13 +257,13 @@ Il appartient à l'`AxisProjection`.
 API cible :
 
 ``` js
-matrix.rows.collapse(id);
-matrix.rows.expand(id);
-matrix.rows.toggle(id);
+matrix.rows.collapse(entryId);
+matrix.rows.expand(entryId);
+matrix.rows.toggle(entryId);
 
-matrix.columns.collapse(id);
-matrix.columns.expand(id);
-matrix.columns.toggle(id);
+matrix.columns.collapse(entryId);
+matrix.columns.expand(entryId);
+matrix.columns.toggle(entryId);
 
 matrix.rows.expandAll();
 matrix.rows.collapseAll();
@@ -646,11 +646,11 @@ renderer.render();
 Navigation :
 
 ``` js
-matrix.rows.collapse("business");
-matrix.rows.expand("business");
+matrix.rows.collapse(rowEntry.entryId);
+matrix.rows.expand(rowEntry.entryId);
 
-matrix.columns.collapse("applications");
-matrix.columns.expand("applications");
+matrix.columns.collapse(columnEntry.entryId);
+matrix.columns.expand(columnEntry.entryId);
 ```
 
 Inspection :
