@@ -55,6 +55,27 @@ describe('AxisProjection', () => {
     expect(axis.getVisibleEntries()).toHaveLength(5);
   });
 
+  it('preserves opaque scope identity in projected entries', () => {
+    const scope = {
+      query: () => 'application-defined'
+    };
+
+    const axis = new AxisProjection({
+      hierarchy: [
+        {
+          id: 'opaque',
+          label: 'Opaque',
+          scope
+        }
+      ]
+    });
+
+    const [entry] = axis.getVisibleEntries();
+
+    expect(entry.scope).toBe(scope);
+    expect(entry.item.scope).toBe(scope);
+  });
+
   it('distinguishes occurrences of the same semantic item', () => {
     const shared = {
       id: 'shared',
