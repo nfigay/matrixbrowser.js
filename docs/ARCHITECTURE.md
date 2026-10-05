@@ -151,57 +151,29 @@ Le core ne définit pas de concepts obligatoires `Graph`, `Node`, `Edge`,
 Un `HierarchyProvider` décrit une projection ou classification
 hiérarchique applicable au modèle.
 
-Contrat conceptuel initial :
-
-``` js
-const hierarchy = {
-  roots(model) {
-    return [];
-  },
-
-  children(item, model) {
-    return [];
-  },
-
-  id(item) {
-    return item.id;
-  },
-
-  members(item, model) {
-    return [];
-  }
-};
-```
-
-### `item`
-
-`item` est l'objet appartenant à la classification ou à la hiérarchie.
-
-Il n'est pas nécessairement un objet du modèle.
-
-Exemple :
+Contrat conceptuel actuel :
 
 ``` js
 {
-  id: "critical",
-  label: "Critical"
+  id,
+  label,
+  children,
+  scope
 }
 ```
 
-peut être un item de classification virtuel.
+Une entrée de hiérarchie décrit une classification ou une projection. Elle
+n'est pas nécessairement un objet du modèle.
 
-### `members`
+`scope` représente le contexte de sélection associé à l'entrée. Sa structure
+est opaque pour le core : elle peut être un identifiant, un ensemble
+d'identifiants, une requête, un prédicat, un domaine métier ou toute autre
+représentation définie par l'application.
 
-`members(item, model)` décrit les éléments du modèle représentés par cet
-item.
-
-Cela dissocie explicitement :
-
-``` text
-élément de classification
-          ≠
-élément du modèle
-```
+Le core ne matérialise pas obligatoirement les éléments représentés par une
+entrée et n'impose pas de contrat `members()`. Des adaptateurs optionnels
+peuvent fournir des opérations telles que `members(scope)` ou
+`select(scope)`, mais elles ne font pas partie du contrat fondamental.
 
 Cette distinction permet d'utiliser :
 
@@ -310,17 +282,17 @@ Forme conceptuelle :
 
 ``` js
 {
+  entryId,
   id,
   item,
+  label,
+  scope,
 
   depth,
   parent,
-  children,
 
   expanded,
-  leaf,
-
-  members
+  leaf
 }
 ```
 
@@ -330,8 +302,13 @@ Une `AxisEntry` représente donc simultanément :
 2.  un état dans une projection d'axe ;
 3.  un contexte de sélection du modèle.
 
-Lorsqu'une branche est repliée, son entrée visible peut représenter
-plusieurs éléments du modèle via `members`.
+Lorsqu'une branche est repliée, son entrée visible conserve son `scope`.
+Le resolver décide comment interpréter ce contexte pour le modèle considéré.
+
+`id` représente l'identité sémantique de l'item tandis que `entryId`
+identifie une occurrence dans une projection d'axe. L'état de
+collapse/expand est associé à `entryId`, car un même item sémantique peut
+apparaître plusieurs fois dans une hiérarchie.
 
 ------------------------------------------------------------------------
 
@@ -345,8 +322,7 @@ Contrat conceptuel :
 resolveCell({
   model,
   row,
-  column,
-  context
+  column
 })
 ```
 
@@ -358,8 +334,8 @@ La valeur retournée est arbitraire.
 resolveCell({ model, row, column }) {
   return hasInteraction(
     model,
-    row.members,
-    column.members
+    row.scope,
+    column.scope
   );
 }
 ```
@@ -370,8 +346,8 @@ resolveCell({ model, row, column }) {
 resolveCell({ model, row, column }) {
   return countInteractions(
     model,
-    row.members,
-    column.members
+    row.scope,
+    column.scope
   );
 }
 ```
@@ -394,8 +370,8 @@ resolveCell({ model, row, column }) {
 resolveCell({ model, row, column }) {
   return extractSubgraph(
     model,
-    row.members,
-    column.members
+    row.scope,
+    column.scope
   );
 }
 ```
@@ -406,8 +382,8 @@ resolveCell({ model, row, column }) {
 resolveCell({ model, row, column }) {
   return shortestPath(
     model,
-    row.members,
-    column.members
+    row.scope,
+    column.scope
   );
 }
 ```
@@ -456,8 +432,8 @@ Exemple :
 resolveCell: async ({ model, row, column }) => {
   return expensiveAnalysis(
     model,
-    row.members,
-    column.members
+    row.scope,
+    column.scope
   );
 }
 ```
@@ -488,15 +464,45 @@ confondus avec `cell.value`.
 
 Le rendu est indépendant du calcul.
 
-Contrat conceptuel :
+Le renderer SVG actuel expose trois points d'extension correspondant au
+cycle de résolution d'une cellule :
 
 ``` js
 renderCell({
   cell,
-  element,
-  context
+  x,
+  y,
+  width,
+  height,
+  createElement
+});
+
+renderPendingCell({
+  cell,
+  x,
+  y,
+  width,
+  height,
+  createElement
+});
+
+renderErrorCell({
+  cell,
+  error,
+  x,
+  y,
+  width,
+  height,
+  createElement
 });
 ```
+
+`renderCell` reçoit une cellule résolue. `renderPendingCell` reçoit la
+cellule dont la valeur est encore asynchrone. `renderErrorCell` reçoit
+également l'objet de rejet original.
+
+Ces hooks appartiennent à `SvgMatrixRenderer`, pas au core de projection et
+de résolution.
 
 Des renderers pourront exister pour différents usages :
 
@@ -622,17 +628,19 @@ const matrix = new MatrixBrowser({
   resolveCell({ model, row, column }) {
     return computeSomething(
       model,
-      row.members,
-      column.members
+      row.scope,
+      column.scope
     );
-  },
-
-  renderCell({ cell, element }) {
-    element.textContent = String(cell.value);
   }
 });
 
-matrix.mount("#matrix");
+const renderer = new SvgMatrixRenderer({
+  matrix,
+  element: document.querySelector("#matrix"),
+  renderCell: customRenderer
+});
+
+renderer.render();
 ```
 
 Navigation :
@@ -823,7 +831,8 @@ Les points suivants doivent être décidés par prototypage ou ADR
 ultérieur :
 
 -   arbre strict ou support natif des taxonomies/DAG ;
--   comportement exact de `members()` pour un groupe ;
+-   adaptateurs optionnels de sélection tels que `members(scope)` ou
+    `select(scope)` ;
 -   cache des cellules ;
 -   invalidation du cache ;
 -   stratégie de résolution paresseuse ;
@@ -871,8 +880,9 @@ Utiliser le texte suivant avec ce document :
 
 > Nous poursuivons le développement de `matrixbrowser-js`.\
 > Prends le document `docs/ARCHITECTURE.md`, référence `MBJS-ARCH-0.1`,
-> comme contexte architectural de départ et source de vérité pour les
-> décisions déjà prises.\
+> comme contexte architectural de départ, complété et affiné par les ADR
+> acceptés dans `docs/adr/`. En cas de divergence, l'ADR accepté le plus
+> spécifique fait autorité.\
 > Respecte ces décisions sauf si nous décidons explicitement de les
 > réviser.\
 > MatrixBrowser doit rester indépendant d'ArchiCG ; ArchiCG est un
@@ -920,4 +930,5 @@ Technical decisions refining this baseline are documented separately as ADRs.
   (`docs/adr/0002-opaque-hierarchy-scopes.md`)
 
 The architecture baseline remains `MBJS-ARCH-0.1`.
-An ADR may refine implementation constraints but must not silently contradict it.
+Accepted ADRs refine this baseline and are authoritative for the decisions
+they explicitly supersede or clarify.
